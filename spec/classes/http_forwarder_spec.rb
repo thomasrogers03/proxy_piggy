@@ -35,6 +35,17 @@ Host: #{uri.host}\r
         subject.connect
       end
 
+      context 'with a proxy specified' do
+        let(:proxy_options) { {host: '1.2.3.4', port: 5} }
+
+        subject { HTTPForwarder.new(global_reactor, request_connection, request, proxy_options) }
+
+        it 'should forward the request to the proxy' do
+          expect(global_reactor).to receive(:connect).with('1.2.3.4', 5).and_return(response_connection_future)
+          subject.connect
+        end
+      end
+
       it 'should return an Ione::Future' do
         expect(subject.connect).to be_a_kind_of(Ione::Future)
       end

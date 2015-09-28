@@ -1,15 +1,16 @@
 module ProxyPiggy
   class HTTPForwarder
 
-    def initialize(reactor, request_connection, request)
+    def initialize(reactor, request_connection, request, proxy_options = {})
       @reactor = reactor
-      @host = request.match(/^Host: (.+)\r$/)[1]
+      @host = proxy_options[:host] || request.match(/^Host: (.+)\r$/)[1]
+      @port = proxy_options[:port] || 80
       @request = request
       @request_connection = request_connection
     end
 
     def connect
-      @reactor.connect(@host, 80).then do |connection|
+      @reactor.connect(@host, @port).then do |connection|
         @connection = connection
         @connection.on_closed(&@on_closed_callback)
         @connection.on_data(&method(:forward_response))
