@@ -11,6 +11,7 @@ module ProxyPiggy
     def connect
       @reactor.connect(@host, 80).then do |connection|
         @connection = connection
+        @connection.on_closed(&@on_closed_callback)
         @connection.on_data(&method(:forward_response))
         self
       end
@@ -18,6 +19,15 @@ module ProxyPiggy
 
     def send_request
       @connection.write(@request)
+    end
+
+    def close
+      @connection.close
+    end
+
+    def on_closed(&callback)
+      @on_closed_callback = callback
+      @connection.on_closed(&callback) if @connection
     end
 
     private

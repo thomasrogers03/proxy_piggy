@@ -23,8 +23,17 @@ module IoneHelper
       @on_data_callback.call(data) if @on_data_callback
     end
 
-    def on_data(&block)
-      @on_data_callback = block
+    def close
+      @closed = true
+      @on_closed_callback.call if @on_closed_callback
+    end
+
+    def on_data(&callback)
+      @on_data_callback = callback
+    end
+
+    def on_closed(&callback)
+      @on_closed_callback = callback
     end
   end
 

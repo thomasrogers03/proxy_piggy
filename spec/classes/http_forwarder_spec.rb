@@ -84,5 +84,36 @@ Host: #{uri.host}\r
       end
     end
 
+    describe '#close' do
+      before { subject.connect.get }
+
+      it 'should close the underlying response connection' do
+        closed = false
+        response_connection.on_closed { closed = true }
+        subject.close
+        expect(closed).to eq(true)
+      end
+    end
+
+    describe '#on_closed' do
+      it 'should run the callback whenever the response connection is closed' do
+        closed = false
+        subject.connect.get
+        subject.on_closed { closed = true }
+        response_connection.close
+        expect(closed).to eq(true)
+      end
+
+      context 'when the callback is specified before connecting' do
+        it 'should forward the callback when connecting' do
+          closed = false
+          subject.on_closed { closed = true }
+          subject.connect.get
+          response_connection.close
+          expect(closed).to eq(true)
+        end
+      end
+    end
+
   end
 end
