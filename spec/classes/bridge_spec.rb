@@ -103,6 +103,13 @@ Host: #{uri.host}\r
           send_initial_request
           request_connection.close
         end
+
+        it 'should stop the reactor' do
+          subject
+          expect(global_reactor).to receive(:stop)
+          send_initial_request
+          request_connection.close
+        end
       end
 
     end

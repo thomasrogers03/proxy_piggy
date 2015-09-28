@@ -40,11 +40,10 @@ module IoneHelper
   let(:global_reactor) { double(:reactor) }
 
   before do
-    allow(global_reactor).to receive(:start) do
-      promise = Ione::Promise.new
-      promise.fulfill(global_reactor)
-      promise.future
-    end
+    reactor_promise = Ione::Promise.new
+    reactor_promise.fulfill(global_reactor)
+    allow(global_reactor).to receive(:start).and_return(reactor_promise.future)
+    allow(global_reactor).to receive(:stop).and_return(reactor_promise.future)
     allow(global_reactor).to receive(:connect) do |host, port|
       promise = Ione::Promise.new
       promise.fulfill(MockConnection.new(host, port))
