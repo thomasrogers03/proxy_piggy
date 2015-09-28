@@ -14,6 +14,8 @@ module ProxyPiggy
         @forwarder.new_request(data)
       else
         @forwarder = HTTPForwarder.new(@reactor, @request_connection, data).connect.get
+        @forwarder.on_closed { @request_connection.close }
+        @request_connection.on_closed { @forwarder.close }
       end
       @forwarder.send_request
     end

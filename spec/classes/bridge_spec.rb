@@ -6,7 +6,7 @@ module ProxyPiggy
     let(:uri_string) { 'http://www.example.com' }
     let(:uri) { URI.parse(uri_string) }
     let(:request_connection) { global_reactor.connect('localhost', 9998).get }
-    let(:forwarder) { double(:forwarder, connect: nil, send_request: nil, new_request: nil) }
+    let(:forwarder) { double(:forwarder, connect: nil, send_request: nil, new_request: nil, on_closed: nil, close: nil) }
     let(:connected_future) do
       promise = Ione::Promise.new
       promise.fulfill(forwarder)
@@ -41,8 +41,7 @@ Host: #{uri.host}\r
       it 'should send the initial request' do
         subject
         expect(forwarder).to receive(:send_request)
-        request_connection.write(original_request)
-        request_connection.flush
+        send_initial_request
       end
 
       context 'with a different initial request' do
@@ -51,8 +50,7 @@ Host: #{uri.host}\r
         it 'should create a forwarder and connect to the server' do
           subject
           expect(forwarder).to receive(:connect)
-          request_connection.write(original_request)
-          request_connection.flush
+          send_initial_request
         end
       end
 
@@ -61,13 +59,40 @@ Host: #{uri.host}\r
           subject
           expect(forwarder).to receive(:new_request).with("GET ... HTTP/2.3\r\n\r\n")
           expect(forwarder).to receive(:send_request).twice
-          request_connection.write(original_request)
-          request_connection.flush
+          send_initial_request
           request_connection.write("GET ... HTTP/2.3\r\n\r\n")
           request_connection.flush
         end
       end
 
+      context 'when the server closes the connection' do
+        it 'should close the request connection' do
+          closed = false
+          request_connection.on_closed { closed = true }
+          allow(forwarder).to receive(:on_closed).and_yield
+          subject
+          send_initial_request
+          expect(closed).to eq(true)
+        end
+      end
+
+      context 'when the client closes the connection' do
+        it 'should close the connection on the forwarder' do
+          subject
+          expect(forwarder).to receive(:close)
+          send_initial_request
+          request_connection.close
+        end
+      end
+
     end
+
+    private
+
+    def send_initial_request
+      request_connection.write(original_request)
+      request_connection.flush
+    end
+
   end
 end
