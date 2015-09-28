@@ -6,6 +6,7 @@ module ProxyPiggy
     let(:uri_string) { 'http://www.example.com' }
     let(:uri) { URI.parse(uri_string) }
     let(:request_connection) { global_reactor.connect('localhost', 9998).get }
+    let(:proxy_options) { {} }
     let(:forwarder) { double(:forwarder, connect: nil, send_request: nil, new_request: nil, on_closed: nil, close: nil) }
     let(:connected_future) do
       promise = Ione::Promise.new
@@ -27,7 +28,7 @@ Host: #{uri.host}\r
 
     before do
       allow(forwarder).to receive(:connect).and_return(connected_future)
-      allow(HTTPForwarder).to receive(:new).with(global_reactor, request_connection, original_request).and_return(forwarder)
+      allow(HTTPForwarder).to receive(:new).with(global_reactor, request_connection, original_request, proxy_options).and_return(forwarder)
       allow(Ione::Io::IoReactor).to receive(:new).and_return(global_reactor)
     end
 
@@ -42,6 +43,19 @@ Host: #{uri.host}\r
         expect(forwarder).to receive(:connect)
         request_connection.write(original_request)
         request_connection.flush
+      end
+
+      context 'with proxy options specified' do
+        let(:proxy_options) { {host: '1.2.3.4', port: 5} }
+
+        subject { Bridge.new(request_connection, proxy_options) }
+
+        it 'should create a forwarder and connect to the server' do
+          subject
+          expect(forwarder).to receive(:connect)
+          request_connection.write(original_request)
+          request_connection.flush
+        end
       end
 
       it 'should send the initial request' do
