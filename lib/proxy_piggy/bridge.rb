@@ -1,10 +1,12 @@
 module ProxyPiggy
   class Bridge
 
-    def initialize(reactor, request_connection)
-      @reactor = reactor
-      @request_connection = request_connection
-      request_connection.on_data(&method(:handle_request))
+    def initialize(request_connection)
+      Ione::Io::IoReactor.new.start.on_value do |reactor|
+        @reactor = reactor
+        @request_connection = request_connection
+        request_connection.on_data(&method(:handle_request))
+      end
     end
 
     private

@@ -23,14 +23,20 @@ Host: #{uri.host}\r
       }
     end
 
-    subject { Bridge.new(global_reactor, request_connection) }
+    subject { Bridge.new(request_connection) }
 
     before do
       allow(forwarder).to receive(:connect).and_return(connected_future)
       allow(HTTPForwarder).to receive(:new).with(global_reactor, request_connection, original_request).and_return(forwarder)
+      allow(Ione::Io::IoReactor).to receive(:new).and_return(global_reactor)
     end
 
     describe 'bridging connections between the client and server' do
+      it 'should start the reactor' do
+        expect(global_reactor).to receive(:start)
+        subject
+      end
+
       it 'should create a forwarder and connect to the server' do
         subject
         expect(forwarder).to receive(:connect)
