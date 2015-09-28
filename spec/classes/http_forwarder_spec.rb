@@ -84,6 +84,24 @@ Host: #{uri.host}\r
       end
     end
 
+    describe '#new_request' do
+      before { subject.connect }
+
+      it 'should update the request with the new data' do
+        subject.new_request("GET stuff HTTP/1.1...\r\n\r\n")
+        expect(response_connection).to receive(:write).with("GET stuff HTTP/1.1...\r\n\r\n")
+        subject.send_request
+      end
+
+      context 'with a different request' do
+        it 'should update the request with the new data' do
+          subject.new_request("POST stuff HTTP/2.0...\r\n\r\n")
+          expect(response_connection).to receive(:write).with("POST stuff HTTP/2.0...\r\n\r\n")
+          subject.send_request
+        end
+      end
+    end
+
     describe '#close' do
       before { subject.connect.get }
 

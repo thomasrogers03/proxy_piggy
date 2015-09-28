@@ -17,6 +17,10 @@ module ProxyPiggy
       end
     end
 
+    def new_request(request)
+      @request = request
+    end
+
     def send_request
       @connection.write(@request)
     end
